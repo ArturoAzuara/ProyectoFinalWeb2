@@ -1,0 +1,50 @@
+<video autoplay muted loop id="videoFondo">
+    <source src="/videos/video_fondo.mp4" type="video/mp4">
+</video>
+
+<div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+    <div class="card shadow-lg"
+         style="width: 280px; background: rgba(20,20,20,0.65); backdrop-filter: blur(6px);
+                border: 1px solid #fff; border-radius: 14px;">
+        <div class="card-body p-4">
+
+            <h4 class="text-center mb-3"
+                style="color: #fff; font-weight: 300; letter-spacing: 1px;">
+                Restablecer contraseña
+            </h4>
+
+            <form action="/reset" method="POST" style="margin-top: 5px;">
+
+                <div class="mb-3">
+                    <label class="form-label"
+                           style="color: #eee; font-size: 0.85rem;">Nueva contraseña</label>
+                    <input type="password" name="password" class="form-control"
+                           style="background: rgba(0,0,0,0.6); border: 1px solid #555;
+                                  color: #fff; height: 32px; font-size: 0.9rem;"
+                           required>
+                </div>
+
+                {{#if mensaje}}
+                    <div class="alert alert-success">{{mensaje}}</div>
+                {{/if}}
+
+                <button type="submit"
+                        class="btn w-100"
+                        style="background: #000; color: #fff; border-radius: 6px;
+                               border: 1px solid #fff; height: 34px; margin-bottom: 8px;">
+                    Guardar nueva contraseña
+                </button>
+
+                <a href="/"
+                   class="btn w-100"
+                   style="background: transparent; color: #fff; border: 1px solid #fff;
+                          border-radius: 6px; height: 34px; display: flex; align-items: center;
+                          justify-content: center;">
+                    Volver al inicio
+                </a>
+
+            </form>
+
+        </div>
+    </div>
+</div>

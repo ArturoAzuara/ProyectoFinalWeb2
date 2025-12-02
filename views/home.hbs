@@ -1,0 +1,231 @@
+<video autoplay muted loop id="videoFondo" style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-1;">
+    <source src="/videos/video_fondo.mp4" type="video/mp4">
+</video>
+
+<nav style="position:fixed; top:20px; right:20px; z-index:10;">
+    <div class="dropdown">
+        <button class="btn btn-dark dropdown-toggle menu-btn" type="button">
+            Menú
+        </button>
+        <div class="dropdown-content dropdown-menu-end" style="display:none; background: rgba(0,0,0,0.8); border-radius:8px; padding:10px; position:absolute; right:0; top:40px;">
+            <a class="dropdown-item text-white" href="/favoritos" style="display:block; padding:5px 10px;">Favoritos</a>
+            <a class="dropdown-item text-white" href="/users" style="display:block; padding:5px 10px;">Usuarios</a>
+            <a class="dropdown-item text-white" href="/logout" style="display:block; padding:5px 10px;">Cerrar sesión</a>
+        </div>
+    </div>
+</nav>
+
+<h2 style="color:white; text-align:center; margin-top: 80px;">Clásicos Británicos</h2>
+
+<div class="d-flex flex-wrap justify-content-center gap-4 mt-4" id="contenedor-canciones">
+    {{#each canciones}}
+        <div class="card shadow-lg song-card" style="width:180px; background: rgba(0,0,0,0.7); color:white; border:1px solid #fff; border-radius:10px; position:relative;">
+            <img src="{{this.portada}}" class="card-img-top"
+                 title="Álbum: {{this.album}}" style="border-radius:10px; cursor:pointer;">
+            <div class="card-body p-2 text-center">
+                <h6 class="card-title mb-1" style="font-size:0.9rem;">{{this.nombre}}</h6>
+                <p class="card-text mb-2" style="font-size:0.8rem;">{{this.artista}}</p>
+                <audio controls style="width:100%;">
+                    <source src="{{this.audio}}" type="audio/mpeg">
+                </audio>
+                <button class="btn btn-sm btn-light mt-2 w-100 favorito-btn"
+                        data-nombre="{{this.nombre}}"
+                        data-artista="{{this.artista}}"
+                        data-audio="{{this.audio}}"
+                        data-portada="{{this.portada}}"
+                        data-album="{{this.album}}">
+                    ❤️ Favoritos
+                </button>
+            </div>
+        </div>
+    {{/each}}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const tarjetas = document.querySelectorAll('.song-card');
+
+        tarjetas.forEach(card => {
+            card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+
+            card.addEventListener('mouseenter', function() {
+                console.log(`Hover sobre: ${this.querySelector('.card-title').textContent}`);
+
+                this.style.transform = 'translateY(-10px) scale(1.05)';
+                this.style.boxShadow = '0 15px 30px rgba(255, 255, 255, 0.3)';
+                this.style.zIndex = '5';
+                this.style.borderColor = '#ff6b6b';
+
+                const img = this.querySelector('.card-img-top');
+                img.style.filter = 'brightness(1.2)';
+            });
+
+            card.addEventListener('mouseleave', function() {
+                // Volver a estado normal
+                this.style.transform = 'translateY(0) scale(1)';
+                this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.2)';
+                this.style.zIndex = '1';
+                this.style.borderColor = '#fff';
+
+                const img = this.querySelector('.card-img-top');
+                img.style.filter = 'brightness(1)';
+            });
+
+            card.addEventListener('click', function(e) {
+                if (!e.target.closest('.favorito-btn') &&
+                        !e.target.closest('audio') &&
+                        e.target.tagName !== 'AUDIO') {
+
+                    console.log(`Click en tarjeta: ${this.querySelector('.card-title').textContent}`);
+
+                    this.style.transform = 'scale(0.95)';
+                    setTimeout(() => {
+                        this.style.transform = 'translateY(-10px) scale(1.05)';
+                    }, 150);
+                }
+            });
+
+            const img = card.querySelector('.card-img-top');
+            img.addEventListener('click', function() {
+                console.log(`Click en portada: ${this.title}`);
+                alert(`Álbum: ${this.title.replace('Álbum: ', '')}`);
+            });
+        });
+
+        const botonesFavoritos = document.querySelectorAll('.favorito-btn');
+
+        botonesFavoritos.forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.stopPropagation();
+
+                const nombre = this.dataset.nombre;
+                const artista = this.dataset.artista;
+
+                console.log(`Agregando a favoritos: "${nombre}" - ${artista}`);
+
+                this.style.transform = 'scale(0.9)';
+                this.style.backgroundColor = '#ff6b6b';
+                this.innerHTML = '❤️ Agregado!';
+
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                    this.style.backgroundColor = '';
+                    this.innerHTML = '❤️ Favoritos';
+                }, 500);
+
+                const data = {
+                    nombre: nombre,
+                    artista: artista,
+                    audio: this.dataset.audio,
+                    portada: this.dataset.portada,
+                    album: this.dataset.album
+                };
+
+                fetch('/favoritos/agregar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                })
+                        .then(res => res.json())
+                        .then(res => {
+                            if(res.success) {
+                                const card = this.closest('.song-card');
+                                card.style.boxShadow = '0 0 20px #ff6b6b';
+                                setTimeout(() => {
+                                    card.style.boxShadow = '0 15px 30px rgba(255, 255, 255, 0.3)';
+                                }, 1000);
+                            }
+                        });
+            });
+
+            btn.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+                this.style.transition = 'transform 0.2s';
+            });
+
+            btn.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+
+        const menuBtn = document.querySelector('.menu-btn');
+        const dropdown = document.querySelector('.dropdown-content');
+
+        if(menuBtn && dropdown) {
+            menuBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isVisible = dropdown.style.display === 'block';
+                dropdown.style.display = isVisible ? 'none' : 'block';
+
+                this.style.transform = isVisible ? 'scale(1)' : 'scale(0.95)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 150);
+            });
+
+            document.addEventListener('click', function(e) {
+                if(!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
+                    dropdown.style.display = 'none';
+                }
+            });
+
+            const menuItems = dropdown.querySelectorAll('.dropdown-item');
+            menuItems.forEach(item => {
+                item.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = 'rgba(255, 107, 107, 0.3)';
+                    this.style.transform = 'translateX(-5px)';
+                    this.style.transition = 'all 0.2s';
+                });
+
+                item.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                    this.style.transform = 'translateX(0)';
+                });
+            });
+        }
+
+        const elementosAudio = document.querySelectorAll('audio');
+
+        elementosAudio.forEach(audio => {
+            audio.addEventListener('play', function() {
+                console.log(`Reproduciendo: ${this.src}`);
+
+                elementosAudio.forEach(otherAudio => {
+                    if(otherAudio !== this && !otherAudio.paused) {
+                        otherAudio.pause();
+                    }
+                });
+
+                const card = this.closest('.song-card');
+                card.style.borderColor = '#4ecdc4';
+                card.style.boxShadow = '0 0 20px rgba(78, 205, 196, 0.5)';
+            });
+
+            audio.addEventListener('pause', function() {
+                const card = this.closest('.song-card');
+                if(!card.matches(':hover')) {
+                    card.style.borderColor = '#fff';
+                    card.style.boxShadow = '';
+                }
+            });
+
+            audio.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+
+        window.addEventListener('load', function() {
+            const contenedor = document.getElementById('contenedor-canciones');
+            if(contenedor) {
+                contenedor.style.opacity = '0';
+                contenedor.style.transform = 'translateY(20px)';
+                contenedor.style.transition = 'opacity 0.5s, transform 0.5s';
+
+                setTimeout(() => {
+                    contenedor.style.opacity = '1';
+                    contenedor.style.transform = 'translateY(0)';
+                }, 100);
+            }
+        });
+    });
+</script>

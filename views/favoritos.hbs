@@ -1,0 +1,310 @@
+<video autoplay muted loop id="videoFondo" style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-1;">
+    <source src="/videos/video_fondo.mp4" type="video/mp4">
+</video>
+
+<h1 style="color:white; text-align:center; margin-top: 40px;">Tus Favoritos</h1>
+
+<div class="d-flex justify-content-center mb-3">
+    <a href="/index" class="btn btn-primary">⬅ Regresar</a>
+    <button id="guardarOrden" class="btn btn-success ms-2" style="display:none;">
+        💾 Guardar Orden
+    </button>
+</div>
+
+<div id="contenedorFavoritos" class="d-flex flex-wrap justify-content-center gap-4 mt-2">
+    {{#each canciones}}
+        <div class="card shadow-lg favorito-item"
+             draggable="true"
+             data-id="{{this.id}}"
+             data-playlist="{{this.playlist}}"
+             style="width:180px; background: rgba(0,0,0,0.7); color:white; border:1px solid #fff; border-radius:10px; cursor:grab; user-select:none;">
+
+            <div class="drag-handle" style="position:absolute; top:5px; left:5px; color:#ccc; font-size:18px; cursor:move;">
+                ⋮⋮
+            </div>
+
+            <img src="{{this.portada}}" class="card-img-top" style="border-radius:10px; pointer-events:none;">
+            <div class="card-body p-2 text-center">
+                <h6 class="card-title mb-1" style="font-size:0.9rem; pointer-events:none;">{{this.nombre}}</h6>
+                <p class="card-text mb-2" style="font-size:0.8rem; pointer-events:none;">{{this.artista}}</p>
+                <audio controls style="width:100%; pointer-events:none;">
+                    <source src="{{this.audio}}" type="audio/mpeg">
+                </audio>
+                <button class="btn btn-sm btn-light mt-2 w-100 btnEliminar" data-id="{{this.id}}">
+                    ❌ Eliminar
+                </button>
+            </div>
+        </div>
+    {{/each}}
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        let itemsFavoritos = document.querySelectorAll('.favorito-item');
+        let itemArrastrado = null;
+        let cambiosRealizados = false;
+        const contenedor = document.getElementById('contenedorFavoritos');
+        const btnGuardar = document.getElementById('guardarOrden');
+
+        itemsFavoritos.forEach(item => {
+            item.setAttribute('draggable', 'true');
+
+            item.addEventListener('dragstart', function(e) {
+                itemArrastrado = this;
+                this.style.opacity = '0.4';
+                this.style.cursor = 'grabbing';
+                this.style.transform = 'rotate(2deg)';
+                this.style.boxShadow = '0 10px 20px rgba(255, 107, 107, 0.6)';
+
+                e.dataTransfer.setData('text/plain', this.dataset.id);
+                e.dataTransfer.effectAllowed = 'move';
+
+                console.log('Iniciando arrastre de:', this.querySelector('.card-title').textContent);
+            });
+
+            item.addEventListener('dragend', function() {
+                this.style.opacity = '1';
+                this.style.cursor = 'grab';
+                this.style.transform = '';
+                this.style.boxShadow = '';
+                this.style.zIndex = '';
+
+                if (cambiosRealizados && btnGuardar.style.display === 'none') {
+                    btnGuardar.style.display = 'inline-block';
+                    btnGuardar.style.animation = 'pulse 1s infinite';
+                }
+
+                actualizarPosicionesVisuales();
+                itemArrastrado = null;
+            });
+
+            item.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+
+                if (itemArrastrado && itemArrastrado !== this) {
+                    const rect = this.getBoundingClientRect();
+                    const mouseY = e.clientY;
+                    const mitadAltura = rect.top + rect.height / 2;
+
+                    if (mouseY < mitadAltura) {
+                        this.style.borderTop = '3px solid #4ecdc4';
+                        this.style.borderBottom = '';
+                        this.style.marginTop = '10px';
+                    } else {
+                        this.style.borderBottom = '3px solid #4ecdc4';
+                        this.style.borderTop = '';
+                        this.style.marginBottom = '10px';
+                    }
+                }
+            });
+
+            item.addEventListener('dragleave', function() {
+                this.style.borderTop = '';
+                this.style.borderBottom = '';
+                this.style.marginTop = '';
+                this.style.marginBottom = '';
+            });
+
+            item.addEventListener('drop', function(e) {
+                e.preventDefault();
+
+                if (itemArrastrado && itemArrastrado !== this) {
+                    const rect = this.getBoundingClientRect();
+                    const mouseY = e.clientY;
+                    const mitadAltura = rect.top + rect.height / 2;
+
+                    if (mouseY < mitadAltura) {
+                        contenedor.insertBefore(itemArrastrado, this);
+                    } else {
+                        if (this.nextSibling) {
+                            contenedor.insertBefore(itemArrastrado, this.nextSibling);
+                        } else {
+                            contenedor.appendChild(itemArrastrado);
+                        }
+                    }
+
+                    cambiosRealizados = true;
+                    console.log('Elemento reubicado');
+                }
+
+                this.style.borderTop = '';
+                this.style.borderBottom = '';
+                this.style.marginTop = '';
+                this.style.marginBottom = '';
+            });
+
+            item.style.transition = 'transform 0.3s, box-shadow 0.3s';
+
+            item.addEventListener('mouseenter', function() {
+                if (itemArrastrado !== this) {
+                    this.style.transform = 'scale(1.05)';
+                    this.style.boxShadow = '0 10px 20px rgba(255, 255, 255, 0.2)';
+                    this.style.zIndex = '5';
+                }
+            });
+
+            item.addEventListener('mouseleave', function() {
+                if (itemArrastrado !== this) {
+                    this.style.transform = 'scale(1)';
+                    this.style.boxShadow = '';
+                    this.style.zIndex = '';
+                }
+            });
+
+            const dragHandle = item.querySelector('.drag-handle');
+            dragHandle.addEventListener('mousedown', function(e) {
+                item.dispatchEvent(new DragEvent('dragstart', {
+                    dataTransfer: new DataTransfer()
+                }));
+            });
+        });
+
+        contenedor.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+
+        contenedor.addEventListener('drop', function(e) {
+            e.preventDefault();
+            if (itemArrastrado) {
+                contenedor.appendChild(itemArrastrado);
+                cambiosRealizados = true;
+            }
+        });
+
+        const botonesEliminar = document.querySelectorAll('.btnEliminar');
+
+        botonesEliminar.forEach(btnEliminar => {
+            btnEliminar.style.transition = 'transform 0.2s, background-color 0.2s';
+
+            btnEliminar.addEventListener('mouseenter', () => {
+                btnEliminar.style.transform = 'scale(1.05)';
+                btnEliminar.style.backgroundColor = '#ff6b6b';
+            });
+
+            btnEliminar.addEventListener('mouseleave', () => {
+                btnEliminar.style.transform = 'scale(1)';
+                btnEliminar.style.backgroundColor = '';
+            });
+
+            btnEliminar.addEventListener('click', () => {
+                const id = btnEliminar.dataset.id;
+                const card = btnEliminar.closest('.favorito-item');
+
+                card.style.transform = 'scale(0.95)';
+                card.style.opacity = '0.7';
+
+                fetch('/favoritos/eliminar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id })
+                })
+                        .then(res => res.json())
+                        .then(res => {
+                            if(res.success){
+                                card.style.transition = 'all 0.5s';
+                                card.style.transform = 'scale(0)';
+                                card.style.opacity = '0';
+
+                                setTimeout(() => {
+                                    location.reload();
+                                }, 500);
+                            } else {
+                                alert('No se pudo eliminar el favorito');
+                                card.style.transform = 'scale(1)';
+                                card.style.opacity = '1';
+                            }
+                        });
+            });
+        });
+
+        btnGuardar.addEventListener('click', () => {
+            guardarNuevoOrden();
+        });
+
+        function actualizarPosicionesVisuales() {
+            const items = document.querySelectorAll('.favorito-item');
+            items.forEach((item, index) => {
+                item.dataset.playlist = index;
+                item.style.transition = 'all 0.5s';
+                setTimeout(() => {
+                    item.style.transition = '';
+                }, 500);
+            });
+        }
+
+        function guardarNuevoOrden() {
+            const items = document.querySelectorAll('.favorito-item');
+            const nuevoOrden = Array.from(items).map(item => ({
+                id: item.dataset.id,
+                nuevaPosicion: Array.from(items).indexOf(item)
+            }));
+
+            console.log('Nuevo orden para playlist:', nuevoOrden);
+
+            btnGuardar.innerHTML = '⏳ Guardando...';
+            btnGuardar.disabled = true;
+            btnGuardar.style.backgroundColor = '#6c757d';
+
+            fetch('/favoritos/reordenar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orden: nuevoOrden })
+            })
+                    .then(res => res.json())
+                    .then(res => {
+                        if(res.success){
+                            btnGuardar.innerHTML = '✅ Guardado en Playlist!';
+                            btnGuardar.style.backgroundColor = '#28a745';
+                            cambiosRealizados = false;
+
+                            items.forEach((item, index) => {
+                                item.dataset.playlist = index;
+                            });
+
+                            setTimeout(() => {
+                                btnGuardar.style.display = 'none';
+                                btnGuardar.innerHTML = '💾 Guardar Orden';
+                                btnGuardar.disabled = false;
+                                btnGuardar.style.backgroundColor = '';
+                                btnGuardar.style.animation = '';
+                            }, 2000);
+                        } else {
+                            btnGuardar.innerHTML = '❌ Error';
+                            btnGuardar.style.backgroundColor = '#dc3545';
+
+                            setTimeout(() => {
+                                btnGuardar.innerHTML = '💾 Guardar Orden';
+                                btnGuardar.disabled = false;
+                                btnGuardar.style.backgroundColor = '';
+                            }, 2000);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        btnGuardar.innerHTML = '💾 Guardar Orden';
+                        btnGuardar.disabled = false;
+                        btnGuardar.style.backgroundColor = '';
+                        alert('Error al guardar el orden en la playlist');
+                    });
+        }
+
+        const style = document.createElement('style');
+        style.textContent = `
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .favorito-item.drag-over {
+            border: 2px dashed #4ecdc4 !important;
+        }
+
+        .drag-handle:hover {
+            color: #ff6b6b !important;
+        }
+    `;
+        document.head.appendChild(style);
+    });
+</script>

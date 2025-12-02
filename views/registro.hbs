@@ -1,0 +1,66 @@
+<video autoplay muted loop id="videoFondo">
+    <source src="/videos/video_fondo.mp4" type="video/mp4">
+</video>
+
+<div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
+    <div class="card shadow-lg"
+         style="width: 350px; background: rgba(20,20,20,0.65); backdrop-filter: blur(6px);
+                border: 1px solid #fff; border-radius: 14px;">
+        <div class="card-body p-4">
+
+            <h3 class="text-center mb-4"
+                style="color: #fff; font-weight: 300; letter-spacing: 1px;">
+                Crear cuenta
+            </h3>
+
+            {{#if mensajeError}}
+                <div class="alert alert-danger">{{mensajeError}}</div>
+            {{/if}}
+
+            {{#if mensaje}}
+                <div class="alert alert-success">{{mensaje}}</div>
+            {{/if}}
+
+            <form action="/registro" method="POST">
+
+                <div class="mb-2">
+                    <label class="form-label" style="color: #eee; font-size: 0.85rem;">Usuario</label>
+                    <input type="text" name="usuario" class="form-control"
+                           style="background: rgba(0,0,0,0.6); border: 1px solid #555; color: #fff;
+                                  height: 32px; font-size: 0.9rem;" required>
+                </div>
+
+                <div class="mb-2">
+                    <label class="form-label" style="color: #eee; font-size: 0.85rem;">Correo</label>
+                    <input type="email" name="correo" class="form-control"
+                           style="background: rgba(0,0,0,0.6); border: 1px solid #555; color: #fff;
+                                  height: 32px; font-size: 0.9rem;" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label" style="color: #eee; font-size: 0.85rem;">Contraseña</label>
+                    <input type="password" name="password" class="form-control"
+                           style="background: rgba(0,0,0,0.6); border: 1px solid #555; color: #fff;
+                                  height: 32px; font-size: 0.9rem;" required>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit"
+                            class="btn w-50"
+                            style="background: #000; color: #fff; border-radius: 6px; border: 1px solid #fff; height: 34px;">
+                        Registrarse
+                    </button>
+
+                    <a href="/"
+                       class="btn w-50"
+                       style="background: transparent; color: #fff; border: 1px solid #fff;
+                              border-radius: 6px; height: 34px; display: flex; align-items: center; justify-content: center;">
+                        Iniciar sesión
+                    </a>
+                </div>
+
+            </form>
+
+        </div>
+    </div>
+</div>
