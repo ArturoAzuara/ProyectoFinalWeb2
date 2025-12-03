@@ -2,21 +2,65 @@
     Bienvenido, {{username}}
 </h2>
 
-
 <video autoplay muted loop id="videoFondo" style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-1;">
     <source src="/videos/video_fondo.mp4" type="video/mp4">
 </video>
 
-<nav style="position:fixed; top:20px; right:20px; z-index:10;">
-    <div class="dropdown">
-        <button class="btn btn-dark dropdown-toggle menu-btn" type="button">
-            Menú
-        </button>
-        <div class="dropdown-content dropdown-menu-end" style="display:none; background: rgba(0,0,0,0.8); border-radius:8px; padding:10px; position:absolute; right:0; top:40px;">
-            <a class="dropdown-item text-white" href="/favoritos" style="display:block; padding:5px 10px;">Favoritos</a>
-            <a class="dropdown-item text-white" href="/users" style="display:block; padding:5px 10px;">Usuarios</a>
-            <a class="dropdown-item text-white" href="/logout" style="display:block; padding:5px 10px;">Cerrar sesión</a>
-        </div>
+<nav style="position: fixed; top: 20px; width: 100%; z-index: 10; text-align: center;">
+    <div class="menu-centrado" style="
+        display: inline-flex;
+        gap: 30px;
+        background: rgba(0, 0, 0, 0.85);
+        padding: 12px 35px;
+        border-radius: 50px;
+        backdrop-filter: blur(10px);
+        border: 2px solid #4ecdc4;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.6);
+    ">
+        <a class="menu-item" href="/favoritos" style="
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.1rem;
+            padding: 10px 25px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        ">
+            <span style="font-size: 1.2rem;"></span> Favoritos
+        </a>
+
+        <a class="menu-item" href="/users" style="
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.1rem;
+            padding: 10px 25px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        ">
+            <span style="font-size: 1.2rem;"></span> Usuarios
+        </a>
+
+        <a class="menu-item" href="/logout" style="
+            color: white;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 1.1rem;
+            padding: 10px 25px;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        ">
+            <span style="font-size: 1.2rem;"></span> Cerrar sesión
+        </a>
     </div>
 </nav>
 
@@ -60,10 +104,53 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const menuItems = document.querySelectorAll('.menu-item');
+
+        menuItems.forEach(item => {
+            item.addEventListener('mouseenter', function() {
+                this.style.backgroundColor = 'rgba(78, 205, 196, 0.2)';
+                this.style.transform = 'translateY(-3px) scale(1.05)';
+                this.style.boxShadow = '0 8px 20px rgba(78, 205, 196, 0.3)';
+                this.style.color = '#4ecdc4';
+                this.style.border = '1px solid rgba(78, 205, 196, 0.3)';
+            });
+
+            item.addEventListener('mouseleave', function() {
+                this.style.backgroundColor = '';
+                this.style.transform = 'translateY(0) scale(1)';
+                this.style.boxShadow = 'none';
+                this.style.color = 'white';
+                this.style.border = '1px solid transparent';
+            });
+
+            item.addEventListener('mousedown', function() {
+                this.style.transform = 'translateY(0) scale(0.95)';
+                this.style.backgroundColor = 'rgba(78, 205, 196, 0.4)';
+            });
+
+            item.addEventListener('mouseup', function() {
+                this.style.transform = 'translateY(-3px) scale(1.05)';
+                this.style.backgroundColor = 'rgba(78, 205, 196, 0.2)';
+            });
+        });
+
+        // Efecto para el contenedor del menú
+        const menuContainer = document.querySelector('.menu-centrado');
+        menuContainer.addEventListener('mouseenter', function() {
+            this.style.boxShadow = '0 10px 30px rgba(78, 205, 196, 0.2)';
+            this.style.borderColor = '#4ecdc4';
+        });
+
+        menuContainer.addEventListener('mouseleave', function() {
+            this.style.boxShadow = '0 5px 25px rgba(0, 0, 0, 0.6)';
+            this.style.borderColor = '#4ecdc4';
+        });
+
         const buscadorInput = document.getElementById('buscadorInput');
         const btnBuscar = document.getElementById('btnBuscar');
         const resultadosBusqueda = document.getElementById('resultadosBusqueda');
         let tooltipActual = null;
+
         async function buscarCanciones(termino) {
             if (!termino.trim()) {
                 resultadosBusqueda.innerHTML = '<p style="color: #ff6b6b; text-align: center;">Escribe algo para buscar</p>';
@@ -216,6 +303,7 @@
 
             document.body.appendChild(tooltipContent);
         }
+
         function agregarEventosResultados() {
             const tarjetasResultados = document.querySelectorAll('.resultado-cancion');
             const portadasResultados = document.querySelectorAll('.portada-resultado');
@@ -580,42 +668,6 @@
             });
         });
 
-        const menuBtn = document.querySelector('.menu-btn');
-        const dropdown = document.querySelector('.dropdown-content');
-
-        if(menuBtn && dropdown) {
-            menuBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                const isVisible = dropdown.style.display === 'block';
-                dropdown.style.display = isVisible ? 'none' : 'block';
-
-                this.style.transform = isVisible ? 'scale(1)' : 'scale(0.95)';
-                setTimeout(() => {
-                    this.style.transform = 'scale(1)';
-                }, 150);
-            });
-
-            document.addEventListener('click', function(e) {
-                if(!menuBtn.contains(e.target) && !dropdown.contains(e.target)) {
-                    dropdown.style.display = 'none';
-                }
-            });
-
-            const menuItems = dropdown.querySelectorAll('.dropdown-item');
-            menuItems.forEach(item => {
-                item.addEventListener('mouseenter', function() {
-                    this.style.backgroundColor = 'rgba(255, 107, 107, 0.3)';
-                    this.style.transform = 'translateX(-5px)';
-                    this.style.transition = 'all 0.2s';
-                });
-
-                item.addEventListener('mouseleave', function() {
-                    this.style.backgroundColor = '';
-                    this.style.transform = 'translateX(0)';
-                });
-            });
-        }
-
         const elementosAudio = document.querySelectorAll('audio');
 
         elementosAudio.forEach(audio => {
@@ -658,6 +710,18 @@
                     contenedor.style.transform = 'translateY(0)';
                 }, 100);
             }
+
+            const menuNav = document.querySelector('nav');
+            if(menuNav) {
+                menuNav.style.opacity = '0';
+                menuNav.style.transform = 'translateY(-20px)';
+                menuNav.style.transition = 'opacity 0.6s, transform 0.6s';
+
+                setTimeout(() => {
+                    menuNav.style.opacity = '1';
+                    menuNav.style.transform = 'translateY(0)';
+                }, 300);
+            }
         });
     });
 </script>
@@ -676,6 +740,38 @@
         .row-cols-lg-5 > * {
             flex: 0 0 auto;
             width: 20%;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .menu-centrado {
+            gap: 15px !important;
+            padding: 10px 20px !important;
+            border-radius: 30px !important;
+        }
+
+        .menu-item {
+            font-size: 1rem !important;
+            padding: 8px 15px !important;
+        }
+
+        .menu-item span {
+            font-size: 1.1rem !important;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .menu-centrado {
+            flex-direction: column !important;
+            gap: 10px !important;
+            border-radius: 20px !important;
+            padding: 15px !important;
+        }
+
+        .menu-item {
+            width: 100% !important;
+            text-align: center !important;
+            justify-content: center !important;
         }
     }
 </style>
