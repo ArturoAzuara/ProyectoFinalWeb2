@@ -1,3 +1,8 @@
+<h2 style="color:white; text-align:center; margin-top: 80px;">
+    Bienvenido, {{username}}
+</h2>
+
+
 <video autoplay muted loop id="videoFondo" style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:-1;">
     <source src="/videos/video_fondo.mp4" type="video/mp4">
 </video>
@@ -15,7 +20,19 @@
     </div>
 </nav>
 
-<h2 style="color:white; text-align:center; margin-top: 80px;">Clásicos Británicos</h2>
+<h2 style="color:white; text-align:center; margin-top: 80px;">MUSICA DISPONIBLE</h2>
+
+<div style="max-width: 600px; margin: 20px auto 30px auto; padding: 0 15px;">
+    <div class="input-group input-group-lg">
+        <input type="text" id="buscadorInput" class="form-control"
+               placeholder="Busca artistas o canciones..."
+               style="background: rgba(0,0,0,0.7); color: white; border: 2px solid #4ecdc4; border-radius: 10px 0 0 10px;">
+        <button class="btn btn-primary" id="btnBuscar" style="border-radius: 0 10px 10px 0; padding: 0 20px;">
+            🔍 Buscar
+        </button>
+    </div>
+    <div id="resultadosBusqueda" style="margin-top: 25px; display: none;"></div>
+</div>
 
 <div class="d-flex flex-wrap justify-content-center gap-4 mt-4" id="contenedor-canciones">
     {{#each canciones}}
@@ -43,13 +60,366 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', () => {
+        const buscadorInput = document.getElementById('buscadorInput');
+        const btnBuscar = document.getElementById('btnBuscar');
+        const resultadosBusqueda = document.getElementById('resultadosBusqueda');
+        let tooltipActual = null;
+        async function buscarCanciones(termino) {
+            if (!termino.trim()) {
+                resultadosBusqueda.innerHTML = '<p style="color: #ff6b6b; text-align: center;">Escribe algo para buscar</p>';
+                resultadosBusqueda.style.display = 'block';
+                return;
+            }
+
+            try {
+                resultadosBusqueda.innerHTML = `
+                    <div style="text-align: center; color: #ccc; padding: 30px;">
+                        <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+                            <span class="visually-hidden">Buscando...</span>
+                        </div>
+                        <p class="mt-3" style="font-size: 1.1rem;">Buscando "<strong>${termino}</strong>"...</p>
+                    </div>
+                `;
+                resultadosBusqueda.style.display = 'block';
+
+                const url = `https://itunes.apple.com/search?term=${encodeURIComponent(termino)}&entity=song&limit=20`;
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (!data.results || data.results.length === 0) {
+                    resultadosBusqueda.innerHTML = `
+                        <div style="text-align: center; color: #ff6b6b; padding: 30px;">
+                            <h5>🎵 No se encontraron resultados</h5>
+                            <p>Intenta con otro término de búsqueda</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+    <div class="mb-4" style="border-bottom: 2px solid #4ecdc4; padding-bottom: 15px;">
+        <h4 style="color: white; margin: 0; text-align: center;">
+            🔍 Resultados para "<span style="color: #4ecdc4">${termino}</span>"
+        </h4>
+        <p style="color: #ccc; text-align: center; margin: 5px 0 0 0;">
+            ${data.results.length} canciones encontradas
+        </p>
+    </div>
+
+    <div class="container-fluid px-0">
+        <div class="row row-cols-1 row-cols-sm-2 g-4 justify-content-center">
+`;
+
+                data.results.forEach((track, index) => {
+                    if (index >= 20) return;
+
+                    const portada = track.artworkUrl100
+                            ? track.artworkUrl100.replace("100x100bb.jpg", "300x300bb.jpg")
+                            : 'https://via.placeholder.com/300x300/333/ccc?text=No+Image';
+
+                    html += `
+        <div class="col">
+            <div class="card h-100 resultado-cancion"
+                 style="background: rgba(0,0,0,0.85); color:white; border:1px solid transparent; border-radius:12px; cursor: pointer; transition: all 0.3s;">
+                <img src="${portada}"
+                     class="card-img-top portada-resultado"
+                     style="border-radius:10px 10px 0 0; height: 200px; object-fit: cover;"
+                     data-album="${track.collectionName || 'Sin álbum'}"
+                     data-artista="${track.artistName || 'Artista desconocido'}"
+                     data-index="${index}"
+                     title="Click para ver álbum">
+
+                <div class="card-body p-3 d-flex flex-column">
+                    <h6 class="card-title mb-2" style="font-size:1rem; min-height: 50px; line-height: 1.2;">
+                        ${track.trackName || 'Sin título'}
+                    </h6>
+
+                    <p class="card-text mb-3" style="font-size:0.9rem; color: #ccc; flex-grow: 1;">
+                        ${track.artistName || 'Artista desconocido'}
+                    </p>
+
+                    ${track.previewUrl ? `
+                    <audio controls class="mb-3" style="width:100%; height: 40px;">
+                        <source src="${track.previewUrl}" type="audio/mpeg">
+                    </audio>
+                    ` : '<p class="text-muted mb-3" style="font-size:0.85rem;">🎵 Sin preview</p>'}
+
+                    <button class="btn btn-sm btn-success w-100 agregar-busqueda-btn mt-auto"
+                            data-nombre="${track.trackName || ''}"
+                            data-artista="${track.artistName || ''}"
+                            data-audio="${track.previewUrl || ''}"
+                            data-portada="${portada}"
+                            data-album="${track.collectionName || ''}"
+                            style="transition: all 0.2s; background: #28a745; border: none; padding: 8px 12px; font-size: 0.9rem;">
+                        ❤️ Agregar a Favoritos
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+                });
+
+                html += `
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 20px; padding-top: 15px; border-top: 1px solid #333;">
+        <p style="color: #999; font-size: 0.9rem;">
+            🎶 Resultados de iTunes Store
+        </p>
+    </div>
+`;
+
+                resultadosBusqueda.innerHTML = html;
+                agregarEventosResultados();
+
+            } catch (error) {
+                console.error('Error en búsqueda:', error);
+                resultadosBusqueda.innerHTML = `
+                    <div style="text-align: center; color: #ff6b6b; padding: 30px;">
+                        <h5>Error de conexión</h5>
+                        <p>Intenta de nuevo en un momento</p>
+                    </div>
+                `;
+            }
+        }
+
+        function mostrarTooltipAlbum(elemento, album, artista, x, y) {
+            if (tooltipActual) {
+                tooltipActual.remove();
+            }
+
+            tooltipActual = document.createElement('div');
+            tooltipActual.className = 'tooltip-album-custom';
+            tooltipActual.innerHTML = `
+                <div style="position: fixed; background: rgba(0,0,0,0.95); color: white;
+                           padding: 8px 12px; border-radius: 8px; border: 1px solid #4ecdc4;
+                           z-index: 9999; max-width: 250px; font-size: 0.8rem;
+                           backdrop-filter: blur(5px); box-shadow: 0 3px 15px rgba(0,0,0,0.7);
+                           pointer-events: none; transform: translate(-50%, -100%);">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px;">
+                        <div style="width: 30px; height: 30px; background: #4ecdc4; border-radius: 6px;
+                                   display: flex; align-items: center; justify-content: center; font-size: 1rem;">
+                            💿
+                        </div>
+                        <div>
+                            <strong style="color: #4ecdc4; display: block; font-size: 0.85rem;">${album}</strong>
+                            <small style="color: #ccc; font-size: 0.75rem;">${artista}</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const tooltipContent = tooltipActual.firstChild;
+            tooltipContent.style.top = (y - 10) + 'px';
+            tooltipContent.style.left = x + 'px';
+
+            document.body.appendChild(tooltipContent);
+        }
+        function agregarEventosResultados() {
+            const tarjetasResultados = document.querySelectorAll('.resultado-cancion');
+            const portadasResultados = document.querySelectorAll('.portada-resultado');
+            const botonesResultados = document.querySelectorAll('.agregar-busqueda-btn');
+
+            portadasResultados.forEach(portada => {
+                let timeoutId;
+
+                portada.addEventListener('mouseenter', function(e) {
+                    const album = this.dataset.album;
+                    const artista = this.dataset.artista;
+
+                    if (!album || album === 'Sin álbum') return;
+
+                    timeoutId = setTimeout(() => {
+                        mostrarTooltipAlbum(this, album, artista, e.clientX, e.clientY);
+
+                        this.style.transform = 'scale(1.05)';
+                        this.style.transition = 'transform 0.3s';
+                        this.style.boxShadow = '0 0 15px rgba(78, 205, 196, 0.5)';
+
+                        const card = this.closest('.resultado-cancion');
+                        if (card) {
+                            card.style.borderColor = '#4ecdc4';
+                            card.style.boxShadow = '0 5px 15px rgba(78, 205, 196, 0.2)';
+                        }
+                    }, 300);
+                });
+
+                portada.addEventListener('mouseleave', function() {
+                    clearTimeout(timeoutId);
+                    if (tooltipActual) {
+                        tooltipActual.remove();
+                        tooltipActual = null;
+                    }
+                    this.style.transform = 'scale(1)';
+                    this.style.boxShadow = '';
+
+                    const card = this.closest('.resultado-cancion');
+                    if (card) {
+                        card.style.borderColor = 'transparent';
+                        card.style.boxShadow = '';
+                    }
+                });
+
+                portada.addEventListener('mousemove', function(e) {
+                    if (tooltipActual && tooltipActual.firstChild) {
+                        const tooltip = tooltipActual.firstChild;
+                        tooltip.style.top = (e.clientY - tooltip.offsetHeight - 10) + 'px';
+                        tooltip.style.left = e.clientX + 'px';
+                    }
+                });
+
+                portada.addEventListener('click', function() {
+                    const album = this.dataset.album;
+                    const artista = this.dataset.artista;
+
+                    if (album && album !== 'Sin álbum') {
+                        alert(`💿 Álbum: ${album}\n👤 Artista: ${artista}`);
+                    }
+                });
+            });
+
+            tarjetasResultados.forEach(card => {
+                card.addEventListener('mouseenter', function(e) {
+                    if (!e.target.closest('.portada-resultado')) {
+                        this.style.transform = 'translateY(-3px) scale(1.02)';
+                        this.style.boxShadow = '0 10px 20px rgba(78, 205, 196, 0.15)';
+                        this.style.borderColor = '#4ecdc4';
+                    }
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = '';
+                    this.style.boxShadow = '';
+                    this.style.borderColor = 'transparent';
+                });
+            });
+
+            botonesResultados.forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+
+                    const nombre = this.dataset.nombre;
+                    const artista = this.dataset.artista;
+
+                    if (!nombre || !artista) {
+                        alert('No se puede agregar esta canción (datos incompletos)');
+                        return;
+                    }
+
+                    const originalText = this.innerHTML;
+                    this.innerHTML = '✓ Agregado!';
+                    this.style.background = '#198754';
+                    this.style.transform = 'scale(0.95)';
+
+                    setTimeout(() => {
+                        this.innerHTML = originalText;
+                        this.style.background = '#28a745';
+                        this.style.transform = 'scale(1)';
+                    }, 1500);
+
+                    const data = {
+                        nombre: nombre,
+                        artista: artista,
+                        audio: this.dataset.audio,
+                        portada: this.dataset.portada,
+                        album: this.dataset.album
+                    };
+
+                    fetch('/favoritos/agregar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                    })
+                            .then(res => res.json())
+                            .then(res => {
+                                if(res.success) {
+                                    const card = this.closest('.resultado-cancion');
+                                    card.style.boxShadow = '0 0 20px #28a745';
+                                    card.style.borderColor = '#28a745';
+
+                                    setTimeout(() => {
+                                        card.style.boxShadow = '';
+                                        card.style.borderColor = 'transparent';
+                                    }, 2000);
+                                } else {
+                                    alert('Error al agregar a favoritos');
+                                }
+                            })
+                            .catch(err => {
+                                console.error('Error:', err);
+                                alert('Error de conexión');
+                            });
+                });
+
+                btn.addEventListener('mouseenter', function() {
+                    if (!this.innerHTML.includes('✓')) {
+                        this.style.transform = 'scale(1.05)';
+                    }
+                });
+
+                btn.addEventListener('mouseleave', function() {
+                    if (!this.innerHTML.includes('✓')) {
+                        this.style.transform = 'scale(1)';
+                    }
+                });
+            });
+
+            const audiosResultados = resultadosBusqueda.querySelectorAll('audio');
+            audiosResultados.forEach(audio => {
+                audio.addEventListener('play', function() {
+                    document.querySelectorAll('audio').forEach(otherAudio => {
+                        if (otherAudio !== this && !otherAudio.paused) {
+                            otherAudio.pause();
+                        }
+                    });
+                });
+            });
+        }
+
+        btnBuscar.addEventListener('click', () => {
+            const termino = buscadorInput.value.trim();
+            if (termino) {
+                buscarCanciones(termino);
+                resultadosBusqueda.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+
+        buscadorInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const termino = buscadorInput.value.trim();
+                if (termino) {
+                    buscarCanciones(termino);
+                    resultadosBusqueda.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        });
+
+        buscadorInput.addEventListener('input', () => {
+            if (buscadorInput.value.trim() === '') {
+                resultadosBusqueda.style.display = 'none';
+                resultadosBusqueda.innerHTML = '';
+                if (tooltipActual) {
+                    tooltipActual.remove();
+                    tooltipActual = null;
+                }
+            }
+        });
+
+        window.addEventListener('scroll', () => {
+            if (tooltipActual) {
+                tooltipActual.remove();
+                tooltipActual = null;
+            }
+        });
+
         const tarjetas = document.querySelectorAll('.song-card');
 
         tarjetas.forEach(card => {
             card.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
 
             card.addEventListener('mouseenter', function() {
-                console.log(`Hover sobre: ${this.querySelector('.card-title').textContent}`);
+                console.log(`Hover sobre tarjeta HOME: ${this.querySelector('.card-title').textContent}`);
 
                 this.style.transform = 'translateY(-10px) scale(1.05)';
                 this.style.boxShadow = '0 15px 30px rgba(255, 255, 255, 0.3)';
@@ -61,7 +431,6 @@
             });
 
             card.addEventListener('mouseleave', function() {
-                // Volver a estado normal
                 this.style.transform = 'translateY(0) scale(1)';
                 this.style.boxShadow = '0 5px 15px rgba(0, 0, 0, 0.2)';
                 this.style.zIndex = '1';
@@ -76,7 +445,7 @@
                         !e.target.closest('audio') &&
                         e.target.tagName !== 'AUDIO') {
 
-                    console.log(`Click en tarjeta: ${this.querySelector('.card-title').textContent}`);
+                    console.log(`Click en tarjeta HOME: ${this.querySelector('.card-title').textContent}`);
 
                     this.style.transform = 'scale(0.95)';
                     setTimeout(() => {
@@ -86,8 +455,71 @@
             });
 
             const img = card.querySelector('.card-img-top');
+
+            let homeTimeoutId = null;
+            let homeTooltip = null;
+
+            img.addEventListener('mouseenter', function(e) {
+                const album = this.title.replace('Álbum: ', '');
+
+                homeTimeoutId = setTimeout(() => {
+                    homeTooltip = document.createElement('div');
+                    homeTooltip.innerHTML = `
+                        <div style="position: fixed; background: rgba(0,0,0,0.95); color: white;
+                                   padding: 12px 15px; border-radius: 10px; border: 2px solid #ff6b6b;
+                                   z-index: 9999; max-width: 300px; font-size: 0.9rem;
+                                   backdrop-filter: blur(5px); box-shadow: 0 5px 20px rgba(0,0,0,0.7);
+                                   pointer-events: none; transform: translate(-50%, -100%);">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                <div style="width: 40px; height: 40px; background: #ff6b6b; border-radius: 8px;
+                                           display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                    💿
+                                </div>
+                                <div>
+                                    <strong style="color: #ff6b6b; display: block;">${album}</strong>
+                                    <small style="color: #ccc;">Álbum</small>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+
+                    const tooltipContent = homeTooltip.firstChild;
+                    tooltipContent.style.top = (e.clientY - 10) + 'px';
+                    tooltipContent.style.left = e.clientX + 'px';
+
+                    document.body.appendChild(tooltipContent);
+
+                    this.style.transform = 'scale(1.05)';
+                    this.style.transition = 'transform 0.3s';
+                    this.style.boxShadow = '0 0 20px rgba(255, 107, 107, 0.5)';
+
+                }, 300);
+            });
+
+            img.addEventListener('mouseleave', function() {
+                if (homeTimeoutId) {
+                    clearTimeout(homeTimeoutId);
+                    homeTimeoutId = null;
+                }
+                if (homeTooltip) {
+                    homeTooltip.remove();
+                    homeTooltip = null;
+                }
+
+                this.style.transform = 'scale(1)';
+                this.style.boxShadow = '';
+            });
+
+            img.addEventListener('mousemove', function(e) {
+                if (homeTooltip && homeTooltip.firstChild) {
+                    const tooltip = homeTooltip.firstChild;
+                    tooltip.style.top = (e.clientY - tooltip.offsetHeight - 10) + 'px';
+                    tooltip.style.left = e.clientX + 'px';
+                }
+            });
+
             img.addEventListener('click', function() {
-                console.log(`Click en portada: ${this.title}`);
+                console.log(`Click en portada HOME: ${this.title}`);
                 alert(`Álbum: ${this.title.replace('Álbum: ', '')}`);
             });
         });
@@ -101,7 +533,7 @@
                 const nombre = this.dataset.nombre;
                 const artista = this.dataset.artista;
 
-                console.log(`Agregando a favoritos: "${nombre}" - ${artista}`);
+                console.log(`Agregando a favoritos desde HOME: "${nombre}" - ${artista}`);
 
                 this.style.transform = 'scale(0.9)';
                 this.style.backgroundColor = '#ff6b6b';
@@ -196,15 +628,15 @@
                     }
                 });
 
-                const card = this.closest('.song-card');
+                const card = this.closest('.song-card, .resultado-cancion');
                 card.style.borderColor = '#4ecdc4';
                 card.style.boxShadow = '0 0 20px rgba(78, 205, 196, 0.5)';
             });
 
             audio.addEventListener('pause', function() {
-                const card = this.closest('.song-card');
+                const card = this.closest('.song-card, .resultado-cancion');
                 if(!card.matches(':hover')) {
-                    card.style.borderColor = '#fff';
+                    card.style.borderColor = '';
                     card.style.boxShadow = '';
                 }
             });
@@ -229,3 +661,21 @@
         });
     });
 </script>
+
+<style>
+    .tooltip-album-custom div {
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translate(-50%, -90%); }
+        to { opacity: 1; transform: translate(-50%, -100%); }
+    }
+
+    @media (min-width: 1200px) {
+        .row-cols-lg-5 > * {
+            flex: 0 0 auto;
+            width: 20%;
+        }
+    }
+</style>

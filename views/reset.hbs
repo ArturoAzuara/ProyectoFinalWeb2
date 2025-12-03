@@ -4,7 +4,7 @@
 
 <div class="d-flex justify-content-center align-items-center" style="height: 100vh;">
     <div class="card shadow-lg"
-         style="width: 280px; background: rgba(20,20,20,0.65); backdrop-filter: blur(6px);
+         style="width: 320px; background: rgba(20,20,20,0.65); backdrop-filter: blur(6px);
                 border: 1px solid #fff; border-radius: 14px;">
         <div class="card-body p-4">
 
@@ -17,15 +17,34 @@
 
                 <div class="mb-3">
                     <label class="form-label"
-                           style="color: #eee; font-size: 0.85rem;">Nueva contraseña</label>
+                           style="color: #eee; font-size: 0.85rem;">
+                        Nueva contraseña
+                    </label>
                     <input type="password" name="password" class="form-control"
                            style="background: rgba(0,0,0,0.6); border: 1px solid #555;
                                   color: #fff; height: 32px; font-size: 0.9rem;"
-                           required>
+                           required
+                           placeholder="Mín. 8 caracteres, 1 mayúscula, 1 número">
                 </div>
 
+                <div class="mb-3">
+                    <label class="form-label"
+                           style="color: #eee; font-size: 0.85rem;">
+                        Confirmar nueva contraseña
+                    </label>
+                    <input type="password" name="confirmarPassword" class="form-control"
+                           style="background: rgba(0,0,0,0.6); border: 1px solid #555;
+                                  color: #fff; height: 32px; font-size: 0.9rem;"
+                           required
+                           placeholder="Repite la contraseña">
+                </div>
+
+                {{#if mensajeError}}
+                    <div class="alert alert-danger mt-2">{{mensajeError}}</div>
+                {{/if}}
+
                 {{#if mensaje}}
-                    <div class="alert alert-success">{{mensaje}}</div>
+                    <div class="alert alert-success mt-2">{{mensaje}}</div>
                 {{/if}}
 
                 <button type="submit"
@@ -48,3 +67,96 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const form = document.querySelector('form');
+        const passwordInput = form.querySelector('input[name="password"]');
+        const confirmInput = form.querySelector('input[name="confirmarPassword"]');
+
+        function validarContraseñas() {
+            const password = passwordInput.value.trim();
+            const confirmar = confirmInput.value.trim();
+
+            passwordInput.style.borderColor = '#555';
+            confirmInput.style.borderColor = '#555';
+
+            if (password && confirmar) {
+                if (password !== confirmar) {
+                    confirmInput.style.borderColor = '#dc3545';
+                    confirmInput.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+                    return false;
+                } else if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
+                    passwordInput.style.borderColor = '#dc3545';
+                    passwordInput.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+                    return false;
+                } else {
+                    passwordInput.style.borderColor = '#28a745';
+                    confirmInput.style.borderColor = '#28a745';
+                    passwordInput.style.boxShadow = '0 0 0 0.2rem rgba(40, 167, 69, 0.25)';
+                    confirmInput.style.boxShadow = '0 0 0 0.2rem rgba(40, 167, 69, 0.25)';
+                    return true;
+                }
+            }
+            return null;
+        }
+
+        passwordInput.addEventListener('input', validarContraseñas);
+        confirmInput.addEventListener('input', validarContraseñas);
+
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+
+            const password = passwordInput.value.trim();
+            const confirmar = confirmInput.value.trim();
+
+            let mensaje = '';
+
+            if (!password || !confirmar) {
+                mensaje = 'Ambos campos son obligatorios';
+            } else if (password !== confirmar) {
+                mensaje = 'Las contraseñas no coinciden';
+            } else if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
+                mensaje = 'La contraseña debe tener mínimo 8 caracteres, incluir una mayúscula y un número';
+            }
+
+            if (mensaje) {
+                const errorDiv = document.querySelector('.alert-danger') ||
+                        document.querySelector('.alert-success');
+
+                if (errorDiv) {
+                    errorDiv.textContent = mensaje;
+                    errorDiv.className = 'alert alert-danger mt-2';
+                    errorDiv.style.display = 'block';
+                } else {
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger mt-2';
+                    alertDiv.textContent = mensaje;
+                    alertDiv.style.display = 'block';
+
+                    confirmInput.parentNode.insertAdjacentElement('afterend', alertDiv);
+                }
+
+                if (password !== confirmar) {
+                    confirmInput.style.borderColor = '#dc3545';
+                    confirmInput.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+                } else if (!/^(?=.*[A-Z])(?=.*\d).{8,}$/.test(password)) {
+                    passwordInput.style.borderColor = '#dc3545';
+                    passwordInput.style.boxShadow = '0 0 0 0.2rem rgba(220, 53, 69, 0.25)';
+                }
+
+                return;
+            }
+
+            form.submit();
+        });
+
+        passwordInput.addEventListener('focus', function() {
+            this.style.boxShadow = '';
+        });
+
+        confirmInput.addEventListener('focus', function() {
+            this.style.boxShadow = '';
+        });
+    });
+</script>

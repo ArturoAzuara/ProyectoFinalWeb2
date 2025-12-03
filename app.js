@@ -1,13 +1,13 @@
 var createError = require('http-errors');
 var express = require('express');
-require('dotenv').config();   // ← AQUÍ
+require('dotenv').config();
 var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 
 var loginRouter = require('./routes/login');
 var registroRouter = require('./routes/registro');
-var indexRouter = require('./routes/index'); // home
+var indexRouter = require('./routes/index');
 var favoritosRouter = require('./routes/favoritos');
 var recuperarRouter = require('./routes/recuperar');
 var resetRouter = require('./routes/reset');

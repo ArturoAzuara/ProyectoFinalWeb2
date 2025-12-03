@@ -23,13 +23,14 @@
                 ⋮⋮
             </div>
 
-            <img src="{{this.portada}}" class="card-img-top" style="border-radius:10px; pointer-events:none;">
+            <img src="{{this.portada}}" class="card-img-top" style="border-radius:10px;">
             <div class="card-body p-2 text-center">
-                <h6 class="card-title mb-1" style="font-size:0.9rem; pointer-events:none;">{{this.nombre}}</h6>
-                <p class="card-text mb-2" style="font-size:0.8rem; pointer-events:none;">{{this.artista}}</p>
-                <audio controls style="width:100%; pointer-events:none;">
+                <h6 class="card-title mb-1" style="font-size:0.9rem;">{{this.nombre}}</h6>
+                <p class="card-text mb-2" style="font-size:0.8rem;">{{this.artista}}</p>
+                <audio controls style="width:100%;">
                     <source src="{{this.audio}}" type="audio/mpeg">
                 </audio>
+
                 <button class="btn btn-sm btn-light mt-2 w-100 btnEliminar" data-id="{{this.id}}">
                     ❌ Eliminar
                 </button>
@@ -46,6 +47,39 @@
         const contenedor = document.getElementById('contenedorFavoritos');
         const btnGuardar = document.getElementById('guardarOrden');
 
+        // Control de audio para favoritos
+        const audiosFavoritos = document.querySelectorAll('#contenedorFavoritos audio');
+
+        audiosFavoritos.forEach(audio => {
+            audio.addEventListener('play', function() {
+                // Pausar otros audios
+                document.querySelectorAll('audio').forEach(otherAudio => {
+                    if(otherAudio !== this && !otherAudio.paused) {
+                        otherAudio.pause();
+                    }
+                });
+
+                // Destacar tarjeta
+                const card = this.closest('.favorito-item');
+                if(card) {
+                    card.style.borderColor = '#4ecdc4';
+                    card.style.boxShadow = '0 0 20px rgba(78, 205, 196, 0.5)';
+                }
+            });
+
+            audio.addEventListener('pause', function() {
+                const card = this.closest('.favorito-item');
+                if(card && !card.matches(':hover')) {
+                    card.style.borderColor = '#fff';
+                    card.style.boxShadow = '';
+                }
+            });
+
+            audio.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        });
+
         itemsFavoritos.forEach(item => {
             item.setAttribute('draggable', 'true');
 
@@ -58,8 +92,6 @@
 
                 e.dataTransfer.setData('text/plain', this.dataset.id);
                 e.dataTransfer.effectAllowed = 'move';
-
-                console.log('Iniciando arrastre de:', this.querySelector('.card-title').textContent);
             });
 
             item.addEventListener('dragend', function() {
@@ -125,7 +157,6 @@
                     }
 
                     cambiosRealizados = true;
-                    console.log('Elemento reubicado');
                 }
 
                 this.style.borderTop = '';
@@ -240,9 +271,7 @@
                 nuevaPosicion: Array.from(items).indexOf(item)
             }));
 
-            console.log('Nuevo orden para playlist:', nuevoOrden);
-
-            btnGuardar.innerHTML = '⏳ Guardando...';
+            btnGuardar.innerHTML = 'Guardando...';
             btnGuardar.disabled = true;
             btnGuardar.style.backgroundColor = '#6c757d';
 
@@ -254,7 +283,7 @@
                     .then(res => res.json())
                     .then(res => {
                         if(res.success){
-                            btnGuardar.innerHTML = '✅ Guardado en Playlist!';
+                            btnGuardar.innerHTML = 'Guardado en Playlist!';
                             btnGuardar.style.backgroundColor = '#28a745';
                             cambiosRealizados = false;
 
@@ -264,17 +293,17 @@
 
                             setTimeout(() => {
                                 btnGuardar.style.display = 'none';
-                                btnGuardar.innerHTML = '💾 Guardar Orden';
+                                btnGuardar.innerHTML = 'Guardar Orden';
                                 btnGuardar.disabled = false;
                                 btnGuardar.style.backgroundColor = '';
                                 btnGuardar.style.animation = '';
                             }, 2000);
                         } else {
-                            btnGuardar.innerHTML = '❌ Error';
+                            btnGuardar.innerHTML = 'Error';
                             btnGuardar.style.backgroundColor = '#dc3545';
 
                             setTimeout(() => {
-                                btnGuardar.innerHTML = '💾 Guardar Orden';
+                                btnGuardar.innerHTML = 'Guardar Orden';
                                 btnGuardar.disabled = false;
                                 btnGuardar.style.backgroundColor = '';
                             }, 2000);
@@ -282,7 +311,7 @@
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        btnGuardar.innerHTML = '💾 Guardar Orden';
+                        btnGuardar.innerHTML = 'Guardar Orden';
                         btnGuardar.disabled = false;
                         btnGuardar.style.backgroundColor = '';
                         alert('Error al guardar el orden en la playlist');
